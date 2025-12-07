@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  timezone  String   @default("America/New_York")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts  Contact[]
+  schedules Schedule[]
+  messages  Message[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String
+  email     String?
+  phone     String?
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schedules Schedule[]
+
+  @@index([userId])
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  contactId   String?
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  type        MessageType // EMAIL or SMS
+  subject     String?     // For emails only
+  body        String
+
+  // Recipient info (can override contact)
+  recipientEmail String?
+  recipientPhone String?
+  recipientName  String?
+
+  // Scheduling
+  scheduledFor DateTime
+  timezone     String      @default("America/New_York")
+
+  // Recurrence (null = one-time)
+  recurrence   Json?       // { type: 'daily' | 'weekly' | 'monthly', interval: 1, daysOfWeek: [0,1,2], endDate?: '2024-12-31', count?: 10 }
+
+  enabled     Boolean  @default(true)
+  status      ScheduleStatus @default(PENDING)
+
+  lastSentAt  DateTime?
+  nextRunAt   DateTime? // For recurring schedules
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages    Message[]
+
+  @@index([userId])
+  @@index([status, enabled, nextRunAt])
+  @@index([scheduledFor])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  scheduleId  String?
+  schedule    Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  type        MessageType
+  subject     String?
+  body        String
+
+  recipientEmail String?
+  recipientPhone String?
+  recipientName  String?
+
+  status      MessageStatus @default(QUEUED)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  errorMessage String?
+
+  // External service IDs for tracking
+  externalId  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([scheduleId])
+  @@index([status])
+  @@index([sentAt])
+}
+
+enum MessageType {
+  EMAIL
+  SMS
+}
+
+enum ScheduleStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+enum MessageStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+}
