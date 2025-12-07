@@ -31,13 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-# But allow .env.example
-!.env.example
+.env*
 
 # vercel
 .vercel
@@ -47,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# Local documentation (not for repo)
+DETAILED_EXPLANATION.md
