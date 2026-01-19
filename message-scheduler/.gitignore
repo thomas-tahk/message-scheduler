@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Data files (contains your schedules)
+data.json
+
+# Gmail credentials and tokens (NEVER COMMIT THESE)
+gmail-credentials.json
+gmail-token.json
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
